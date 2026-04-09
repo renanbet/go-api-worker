@@ -20,11 +20,13 @@ services:
       ZOOKEEPER_TICK_TIME: "2000"
     ports:
       - "2181:2181"
+    # cp-zookeeper (UBI/minimal) muitas vezes não tem `nc`; bash + /dev/tcp costuma existir.
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/2181'"]
       interval: 10s
       timeout: 5s
-      retries: 20
+      retries: 12
+      start_period: 40s
 
   message_broker:
     image: confluentinc/cp-kafka:7.6.1
