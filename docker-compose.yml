@@ -59,6 +59,17 @@ services:
       timeout: 10s
       retries: 20
 
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    depends_on:
+      - message_broker
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "message_broker:29092"
+      JVM_OPTS: "-Xms32M -Xmx64M"
+    restart: always
+
   api_service:
     build:
       context: .
