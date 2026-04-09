@@ -39,6 +39,18 @@ func (r *orderRepository) Create(ctx context.Context, o order.Order) error {
 	return err
 }
 
+func (r *orderRepository) GetByID(ctx context.Context, orderID string) (order.Order, error) {
+	var o order.Order
+	err := r.coll.FindOne(ctx, bson.D{{Key: "order_id", Value: orderID}}).Decode(&o)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return order.Order{}, port.ErrNotFound{}
+		}
+		return order.Order{}, err
+	}
+	return o, nil
+}
+
 func (r *orderRepository) UpdateStatus(ctx context.Context, orderID string, status order.Status) error {
 	res, err := r.coll.UpdateOne(
 		ctx,

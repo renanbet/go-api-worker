@@ -54,7 +54,12 @@ func run(ctx context.Context) error {
 		Topic:     cfg.KafkaTopic,
 	}
 
-	h := &httpinfra.Handler{CreateOrderUC: createUC}
+	getUC := usecase.GetOrder{Repo: repo}
+
+	h := &httpinfra.Handler{
+		CreateOrderUC: createUC,
+		GetOrderUC:    getUC,
+	}
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
 		Handler:           httpinfra.NewRouter(h),
