@@ -45,6 +45,13 @@ func run(ctx context.Context) error {
 		return err
 	}
 
+	kctx, kcancel := context.WithTimeout(ctx, 30*time.Second)
+	if err := kafkainfra.EnsureTopic(kctx, cfg.KafkaBrokers, cfg.KafkaTopic); err != nil {
+		kcancel()
+		return err
+	}
+	kcancel()
+
 	producer := kafkainfra.NewProducer(cfg.KafkaBrokers)
 	defer func() { _ = producer.Close() }()
 
