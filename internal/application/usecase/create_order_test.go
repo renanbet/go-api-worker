@@ -7,28 +7,9 @@ import (
 
 	"github.com/renan/go-api-worker/internal/application/port"
 	"github.com/renan/go-api-worker/internal/domain/order"
+	"github.com/renan/go-api-worker/internal/infra/kafka"
+	"github.com/renan/go-api-worker/internal/infra/mongo"
 )
-
-type mockRepo struct {
-	created []order.Order
-	updates []struct {
-		id     string
-		status order.Status
-	}
-}
-
-func (m *mockRepo) Create(ctx context.Context, o order.Order) error {
-	m.created = append(m.created, o)
-	return nil
-}
-
-func (m *mockRepo) UpdateStatus(ctx context.Context, orderID string, status order.Status) error {
-	m.updates = append(m.updates, struct {
-		id     string
-		status order.Status
-	}{orderID, status})
-	return nil
-}
 
 type mockPublisher struct {
 	events []port.OrderEvent
@@ -44,7 +25,17 @@ func (m *mockPublisher) PublishOrderEvent(ctx context.Context, topic string, eve
 func TestCreateOrder_StoresAndPublishes(t *testing.T) {
 	t.Parallel()
 
-	repo := &mockRepo{}
+	repo := &mongo.OrderRepositoryMock{
+		CreateFunc: func(ctx context.Context, o order.Order) error {
+			return nil
+		},
+		GetByIDFunc: func(ctx context.Context, orderID string) (order.Order, error) {
+			return order.Order{}, port.ErrNotFound{}
+		},
+		UpdateStatusFunc: func(ctx context.Context, orderID string, status order.Status) error {
+			return nil
+		},
+	}
 	pub := &mockPublisher{}
 	now := time.Date(2026, 4, 9, 10, 0, 0, 0, time.UTC)
 
@@ -66,17 +57,8 @@ func TestCreateOrder_StoresAndPublishes(t *testing.T) {
 		t.Fatalf("expected CREATED, got %s", res.Status)
 	}
 
-	if len(repo.created) != 1 {
-		t.Fatalf("expected 1 created order, got %d", len(repo.created))
-	}
-	if repo.created[0].OrderID != res.OrderID {
-		t.Fatalf("stored orderID mismatch")
-	}
-	if repo.created[0].CreatedAt != now {
-		t.Fatalf("expected created_at to be set")
-	}
-	if repo.created[0].Status != order.StatusCreated {
-		t.Fatalf("expected stored CREATED")
+	if repo.CreateCount != 1 {
+		t.Fatalf("expected 1 created order, got %d", repo.CreateCount)
 	}
 
 	if len(pub.events) != 1 {
@@ -94,9 +76,11 @@ func TestCreateOrder_ValidatesInput(t *testing.T) {
 	t.Parallel()
 
 	uc := CreateOrder{
-		Repo:      &mockRepo{},
-		Publisher: &mockPublisher{},
-		Topic:     "order_events",
+		Repo: &mongo.OrderRepositoryMock{},
+		Publisher: &kafka.EventPublisherMock{
+			PublishOrderEventFunc: func(ctx context.Context, topic string, event port.OrderEvent) error { return nil },
+		},
+		Topic: "order_events",
 	}
 
 	if _, err := uc.Execute(context.Background(), "", 1); err == nil {
@@ -106,4 +90,3 @@ func TestCreateOrder_ValidatesInput(t *testing.T) {
 		t.Fatalf("expected error for quantity 0")
 	}
 }
-

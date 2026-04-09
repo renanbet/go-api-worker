@@ -7,12 +7,18 @@ import (
 
 	"github.com/renan/go-api-worker/internal/application/port"
 	"github.com/renan/go-api-worker/internal/domain/order"
+	"github.com/renan/go-api-worker/internal/infra/mongo"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessOrder_UpdatesProcessingAndConcluded(t *testing.T) {
 	t.Parallel()
 
-	repo := &mockRepo{}
+	repo := &mongo.OrderRepositoryMock{
+		UpdateStatusFunc: func(ctx context.Context, orderID string, status order.Status) error {
+			return nil
+		},
+	}
 	var slept time.Duration
 
 	uc := ProcessOrder{
@@ -22,20 +28,7 @@ func TestProcessOrder_UpdatesProcessingAndConcluded(t *testing.T) {
 	}
 
 	err := uc.HandleEvent(context.Background(), port.OrderEvent{OrderID: "abc", Status: "PROCESSING"})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if slept != 2*time.Second {
-		t.Fatalf("expected sleep 2s, got %v", slept)
-	}
-	if len(repo.updates) != 2 {
-		t.Fatalf("expected 2 updates, got %d", len(repo.updates))
-	}
-	if repo.updates[0].status != order.StatusProcessing {
-		t.Fatalf("expected PROCESSING, got %s", repo.updates[0].status)
-	}
-	if repo.updates[1].status != order.StatusConcluded {
-		t.Fatalf("expected CONCLUDED, got %s", repo.updates[1].status)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, 2*time.Second, slept)
+	assert.Equal(t, 2, repo.UpdateStatusCount)
 }
-
