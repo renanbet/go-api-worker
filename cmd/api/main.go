@@ -46,7 +46,7 @@ func run(ctx context.Context) error {
 	}
 
 	kctx, kcancel := context.WithTimeout(ctx, 30*time.Second)
-	if err := kafkainfra.EnsureTopic(kctx, cfg.KafkaBrokers, cfg.KafkaTopic); err != nil {
+	if err := kafkainfra.EnsureTopic(kctx, cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaNumPartitions); err != nil {
 		kcancel()
 		return err
 	}

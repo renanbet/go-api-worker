@@ -3,16 +3,18 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type Config struct {
-	HTTPAddr    string
-	MongoURI    string
-	MongoDB     string
-	KafkaBrokers []string
-	KafkaTopic  string
-	KafkaGroupID string
+	HTTPAddr           string
+	MongoURI           string
+	MongoDB            string
+	KafkaBrokers       []string
+	KafkaTopic         string
+	KafkaGroupID       string
+	KafkaNumPartitions int
 }
 
 func Load() (Config, error) {
@@ -22,6 +24,10 @@ func Load() (Config, error) {
 	kafkaBrokersRaw := os.Getenv("KAFKA_BROKERS")
 	kafkaTopic := getenv("KAFKA_TOPIC", "order_events")
 	kafkaGroupID := getenv("KAFKA_GROUP_ID", "orders-worker")
+	kafkaNumPartitions, err := strconv.Atoi(getenv("KAFKA_NUM_PARTITIONS", "3"))
+	if err != nil {
+		return Config{}, fmt.Errorf("KAFKA_NUM_PARTITIONS is not a number: %w", err)
+	}
 
 	var brokers []string
 	for _, b := range strings.Split(kafkaBrokersRaw, ",") {
@@ -39,12 +45,13 @@ func Load() (Config, error) {
 	}
 
 	return Config{
-		HTTPAddr:     httpAddr,
-		MongoURI:     mongoURI,
-		MongoDB:      mongoDB,
-		KafkaBrokers: brokers,
-		KafkaTopic:   kafkaTopic,
-		KafkaGroupID: kafkaGroupID,
+		HTTPAddr:           httpAddr,
+		MongoURI:           mongoURI,
+		MongoDB:            mongoDB,
+		KafkaBrokers:       brokers,
+		KafkaTopic:         kafkaTopic,
+		KafkaGroupID:       kafkaGroupID,
+		KafkaNumPartitions: kafkaNumPartitions,
 	}, nil
 }
 
@@ -55,4 +62,3 @@ func getenv(k, def string) string {
 	}
 	return v
 }
-

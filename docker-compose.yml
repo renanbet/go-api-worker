@@ -93,7 +93,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.worker
-    container_name: worker_service
     depends_on:
       mongodb:
         condition: service_healthy

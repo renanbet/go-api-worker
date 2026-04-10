@@ -1,8 +1,8 @@
 up:
-	docker compose up -d
+	docker compose up -d --build --scale worker_service=3
 
 run:
-	docker compose up -d
+	docker compose up -d --build --scale worker_service=3
 
 down:
 	docker compose down
@@ -29,3 +29,6 @@ build-api:
 
 build-worker:
 	docker compose build worker_service --no-cache
+
+restart-worker:
+	docker compose restart worker_service

@@ -11,12 +11,15 @@ import (
 
 // EnsureTopic cria o tópico no cluster se ainda não existir (idempotente).
 // Usa o broker controller (CreateTopics); adequado ao compose com 1 broker (RF=1).
-func EnsureTopic(ctx context.Context, brokers []string, topic string) error {
+func EnsureTopic(ctx context.Context, brokers []string, topic string, numPartitions int) error {
 	if len(brokers) == 0 {
 		return fmt.Errorf("kafka: no brokers")
 	}
 	if topic == "" {
 		return fmt.Errorf("kafka: topic is required")
+	}
+	if numPartitions <= 0 {
+		return fmt.Errorf("kafka: numPartitions must be > 0")
 	}
 
 	broker := brokers[0]
@@ -40,7 +43,7 @@ func EnsureTopic(ctx context.Context, brokers []string, topic string) error {
 
 	err = ctrlConn.CreateTopics(kafka.TopicConfig{
 		Topic:             topic,
-		NumPartitions:     1,
+		NumPartitions:     numPartitions,
 		ReplicationFactor: 1,
 	})
 	if err != nil {

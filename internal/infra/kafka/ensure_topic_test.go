@@ -10,8 +10,8 @@ import (
 func TestEnsureTopic_ValidatesInput(t *testing.T) {
 	t.Parallel()
 
-	err := EnsureTopic(context.Background(), nil, "x")
+	err := EnsureTopic(context.Background(), nil, "x", 1)
 	assert.Error(t, err)
-	err = EnsureTopic(context.Background(), []string{"localhost:9092"}, "")
+	err = EnsureTopic(context.Background(), []string{"localhost:9092"}, "", 1)
 	assert.Error(t, err)
 }
