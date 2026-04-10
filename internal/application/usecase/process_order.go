@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/renan/go-api-worker/internal/application/port"
@@ -12,12 +13,13 @@ import (
 type Sleeper func(time.Duration)
 
 type ProcessOrder struct {
-	Repo   port.OrderRepository
-	Sleep  Sleeper
-	Delay  time.Duration
+	Repo  port.OrderRepository
+	Sleep Sleeper
+	Delay time.Duration
 }
 
 func (uc ProcessOrder) HandleEvent(ctx context.Context, ev port.OrderEvent) error {
+	log.Printf("processing order %s with status %s", ev.OrderID, ev.Status)
 	if uc.Repo == nil {
 		return fmt.Errorf("repo is required")
 	}
@@ -41,6 +43,6 @@ func (uc ProcessOrder) HandleEvent(ctx context.Context, ev port.OrderEvent) erro
 	if err := uc.Repo.UpdateStatus(ctx, ev.OrderID, order.StatusConcluded); err != nil {
 		return err
 	}
+	log.Printf("order %s processed with status %s", ev.OrderID, order.StatusConcluded)
 	return nil
 }
-

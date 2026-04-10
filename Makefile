@@ -1,11 +1,16 @@
+up:
+	docker compose up -d
+
 run:
-	docker compose up -d --build
+	docker compose up -d
 
 down:
 	docker compose down
 
-logs:
+logs-api:
 	docker compose logs -f api_service
+
+logs-worker:
 	docker compose logs -f worker_service
 
 test:
@@ -18,3 +23,9 @@ clean:
 lint:
 	go vet ./...
 	golangci-lint run ./...
+
+build-api:
+	docker compose build api_service --no-cache
+
+build-worker:
+	docker compose build worker_service --no-cache

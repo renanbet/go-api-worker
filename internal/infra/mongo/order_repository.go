@@ -55,7 +55,7 @@ func (r *orderRepository) UpdateStatus(ctx context.Context, orderID string, stat
 	res, err := r.coll.UpdateOne(
 		ctx,
 		bson.D{{Key: "order_id", Value: orderID}},
-		bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: status}}}},
+		bson.D{{Key: "$set", Value: bson.D{{Key: "status", Value: status}, {Key: "updated_at", Value: time.Now()}}}},
 	)
 	if err != nil {
 		return err
