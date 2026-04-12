@@ -55,6 +55,42 @@ func Load() (Config, error) {
 	}, nil
 }
 
+type EmailWorkerConfig struct {
+	KafkaBrokers  []string
+	KafkaTopic    string
+	RabbitMQURL   string
+	RabbitMQQueue string
+}
+
+func LoadEmailWorker() (EmailWorkerConfig, error) {
+	kafkaBrokersRaw := os.Getenv("KAFKA_BROKERS")
+	kafkaTopic := getenv("KAFKA_TOPIC", "order_events")
+	rabbitMQURL := os.Getenv("RABBITMQ_URL")
+	rabbitMQQueue := getenv("RABBITMQ_QUEUE", "email_queue")
+
+	var brokers []string
+	for _, b := range strings.Split(kafkaBrokersRaw, ",") {
+		b = strings.TrimSpace(b)
+		if b != "" {
+			brokers = append(brokers, b)
+		}
+	}
+
+	if len(brokers) == 0 {
+		return EmailWorkerConfig{}, fmt.Errorf("KAFKA_BROKERS is required")
+	}
+	if rabbitMQURL == "" {
+		return EmailWorkerConfig{}, fmt.Errorf("RABBITMQ_URL is required")
+	}
+
+	return EmailWorkerConfig{
+		KafkaBrokers:  brokers,
+		KafkaTopic:    kafkaTopic,
+		RabbitMQURL:   rabbitMQURL,
+		RabbitMQQueue: rabbitMQQueue,
+	}, nil
+}
+
 func getenv(k, def string) string {
 	v := os.Getenv(k)
 	if v == "" {

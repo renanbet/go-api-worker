@@ -59,6 +59,25 @@ services:
       timeout: 10s
       retries: 20
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_ERLANG_COOKIE: "secret-cookie"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
   kafdrop:
     image: obsidiandynamics/kafdrop:latest
     depends_on:
@@ -105,6 +124,23 @@ services:
       KAFKA_TOPIC: "order_events"
       KAFKA_GROUP_ID: "orders-worker"
 
+  email_service:
+    build:
+      context: .
+      dockerfile: Dockerfile.email
+    container_name: email_service
+    depends_on:
+      message_broker:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKERS: "message_broker:29092"
+      KAFKA_TOPIC: "order_events"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      RABBITMQ_QUEUE: "email_queue"
+
 volumes:
   mongo_data:
+  rabbitmq_data:
 
